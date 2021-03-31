@@ -1,5 +1,6 @@
 #include "param.h"
 #include "types.h"
+#include "ptentry.h"
 #include "defs.h"
 #include "x86.h"
 #include "memlayout.h"
@@ -382,6 +383,18 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
     buf += n;
     va = va0 + PGSIZE;
   }
+  return 0;
+}
+
+int mencrypt(char *virtual_addr, int len) {
+  return 0;
+}
+
+int getpgtable(struct pt_entry* entries, int num){
+  return 0;
+}
+
+int dump_rawphymem(uint physical_addr, char *buffer){
   return 0;
 }
 
