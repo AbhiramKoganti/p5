@@ -186,6 +186,8 @@ pde_t*          copyuvm(pde_t*, uint);
 void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
+void		encrypt(char*);
+int		decrypt(char*);
 void            clearpteu(pde_t *pgdir, char *uva);
 int 		mencrypt(char*, int);
 int		getpgtable(struct pt_entry*, int);

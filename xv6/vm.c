@@ -353,8 +353,8 @@ uva2ka(pde_t *pgdir, char *uva)
   pte_t *pte;
 
   pte = walkpgdir(pgdir, uva, 0);
-  if((*pte & PTE_P) == 0)
-    return 0;
+//  if((*pte & PTE_P) == 0)
+//    return 0;
   if((*pte & PTE_U) == 0)
     return 0;
   return (char*)P2V(PTE_ADDR(*pte));
@@ -386,12 +386,66 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
-int mencrypt(char *virtual_addr, int len) {
+// Encrypts a page (assumes kern_addr is page-aligned
+void encrypt(char* kern_addr){
+  for (int i = 0; i < PGSIZE; ++i)
+    *(kern_addr + i) ^= 0xFF;
+}
+
+int decrypt(char* virtual_addr) {
+  pte_t *pte;
+  struct proc *curproc = myproc();
+  pte = walkpgdir(curproc->pgdir, virtual_addr, 0);
+
+  if((*pte & PTE_E) == 0)
+    return -1;
+
+  *pte &= ~PTE_E;
+  *pte |= PTE_P;
+  encrypt((char*)P2V(PTE_ADDR(*pte)));
   return 0;
 }
 
-int getpgtable(struct pt_entry* entries, int num){
+int mencrypt(char *virtual_addr, int len) {
+  if(len == 0) return 0;
+  if(len < 0) return -1;
+
+  struct proc *curproc = myproc();
+  virtual_addr -= (int)virtual_addr % PGSIZE;
+  
+  for(int i = 0; i < len; i++) {
+    char* kern_addr = uva2ka(curproc->pgdir, virtual_addr);
+    if(kern_addr == 0)
+      return -1;
+    
+    pte_t *pte;
+    pte = walkpgdir(curproc->pgdir, virtual_addr, 0);
+    
+    if((*pte & PTE_E) == 1)
+      continue;
+    *pte &= ~PTE_P;
+    *pte |= PTE_E;
+    encrypt((char*)P2V(PTE_ADDR(*pte)));
+    virtual_addr += PGSIZE;
+  }
   return 0;
+}
+
+
+int getpgtable(struct pt_entry* entries, int num){
+  if(entries == 0)
+    return -1;
+  // figure out how to get virtual addresses from process, or all pages in order
+  // then fill pt_entries
+  //struct proc* curproc = myproc();
+  
+  
+ // pde_t *pde = curproc->pgdir;
+
+
+
+  return 0;
+
 }
 
 int dump_rawphymem(uint physical_addr, char *buffer){
