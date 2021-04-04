@@ -56,7 +56,7 @@ int sys_getpgtable(void){
 
   if(argptr(0, (void*)&entries, sizeof(struct ptentry*)) < 0)
     return -1;
-  if(argint(0, &num) < 0)
+  if(argint(1, &num) < 0)
     return -1;
 
   return getpgtable(entries, num);

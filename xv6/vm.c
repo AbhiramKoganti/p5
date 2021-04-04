@@ -411,20 +411,22 @@ int mencrypt(char *virtual_addr, int len) {
   if(len < 0) return -1;
 
   struct proc *curproc = myproc();
-  virtual_addr -= (int)virtual_addr % PGSIZE;
+  virtual_addr -= (int)virtual_addr % PGSIZE;// page alining the virtual adress
   
   for(int i = 0; i < len; i++) {
-    char* kern_addr = uva2ka(curproc->pgdir, virtual_addr);
-    if(kern_addr == 0)
+    char* kern_addr = uva2ka(curproc->pgdir, virtual_addr); //get the kernel adress
+    if(kern_addr == 0) //checks if the virtual adress points to a valid kernel address
       return -1;
-    
+  }
+
+  for(int i = 0; i < len; i++) {   
     pte_t *pte;
-    pte = walkpgdir(curproc->pgdir, virtual_addr, 0);
+    pte = walkpgdir(curproc->pgdir, virtual_addr, 0); //gets the adress of the pte
     
-    if((*pte & PTE_E) == 1)
+    if((*pte & PTE_E) == PTE_E) //checks if the pte has been encrypted
       continue;
-    *pte &= ~PTE_P;
-    *pte |= PTE_E;
+    *pte &= ~PTE_P;// clear the PTE_P bit
+    *pte |= PTE_E; // set the PTE_E bit
     encrypt((char*)P2V(PTE_ADDR(*pte)));
     virtual_addr += PGSIZE;
   }
@@ -437,14 +439,54 @@ int getpgtable(struct pt_entry* entries, int num){
     return -1;
   // figure out how to get virtual addresses from process, or all pages in order
   // then fill pt_entries
-  //struct proc* curproc = myproc();
+  struct proc* curproc = myproc();
+
+  // &pgtab[PTX(va)]
+  int count=0;
+  int numPages=curproc->sz/PGSIZE;
+  int pgIndex=((numPages-1)/NPTENTRIES); 
+  for(int i=pgIndex;i>=0;i--){
+    pde_t *pde;
+    pde_t *pgtab;
+    int lastPage=numPages-(i*1024)-1; //need to consider corner case 1024 pages
+    pde = &curproc->pgdir[i];
+    pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+    for(int j=lastPage;j>=0;j--){
+      pte_t * pteAddr;
+      pteAddr=&pgtab[j];
+      entries->pdx=i;
+      entries->ptx=j;
+      entries->ppage=*pteAddr >> PTXSHIFT;
+      if((*pteAddr & PTE_E) == PTE_E){
+        entries->encrypted=1;
+      }
+      if((*pteAddr & PTE_P) == PTE_P){
+        entries->present=1;
+      }
+      if((*pteAddr & PTE_W) == PTE_W){
+        entries->writable=1;
+      }
+      count++;
+      
+      if(count==num){
+        return count;
+      }
+      entries++;
+    }
+  }
+  // panic("here");
+  return count;
+  // uint addr=PTE_ADDR(&pde[PTX(0)]);
+  // pde_t *pte= *pde;
+  // return addr;
   
   
- // pde_t *pde = curproc->pgdir;
+ 
 
 
 
-  return 0;
+
+  // return 0;
 
 }
 
