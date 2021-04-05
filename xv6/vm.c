@@ -460,11 +460,20 @@ int getpgtable(struct pt_entry* entries, int num){
       if((*pteAddr & PTE_E) == PTE_E){
         entries->encrypted=1;
       }
+      else{
+        entries->encrypted=0;
+      }
       if((*pteAddr & PTE_P) == PTE_P){
         entries->present=1;
       }
+      else{
+        entries->present=0;
+      }
       if((*pteAddr & PTE_W) == PTE_W){
         entries->writable=1;
+      }
+      else{
+        entries->writable=0;
       }
       count++;
       
@@ -491,7 +500,12 @@ int getpgtable(struct pt_entry* entries, int num){
 }
 
 int dump_rawphymem(uint physical_addr, char *buffer){
-  return 0;
+  char* va = P2V(physical_addr);
+  struct proc* curproc = myproc();
+  int output=copyout(curproc->pgdir,*va,buffer,PGSIZE);
+  return output;
+
+  // return 0;
 }
 
 //PAGEBREAK!
