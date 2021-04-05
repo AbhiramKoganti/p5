@@ -414,7 +414,7 @@ int mencrypt(char *virtual_addr, int len) {
   virtual_addr -= (int)virtual_addr % PGSIZE;// page alining the virtual adress
   
   for(int i = 0; i < len; i++) {
-    char* kern_addr = uva2ka(curproc->pgdir, virtual_addr); //get the kernel adress
+    char* kern_addr = uva2ka(curproc->pgdir, virtual_addr+(PGSIZE*i)); //get the kernel adress
     if(kern_addr == 0) //checks if the virtual adress points to a valid kernel address
       return -1;
   }
