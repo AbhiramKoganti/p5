@@ -430,6 +430,7 @@ int mencrypt(char *virtual_addr, int len) {
     encrypt((char*)P2V(PTE_ADDR(*pte)));
     virtual_addr += PGSIZE;
   }
+  lcr3(V2P(myproc()->pgdir));
   return 0;
 }
 
