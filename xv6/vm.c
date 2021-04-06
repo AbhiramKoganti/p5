@@ -69,9 +69,15 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
   for(;;){
     if((pte = walkpgdir(pgdir, a, 1)) == 0)
       return -1;
-    if(*pte & PTE_P)
+    if(*pte & (PTE_P|PTE_E))
       panic("remap");
-    *pte = pa | perm | PTE_P;
+    if(perm & PTE_E){
+      *pte = pa | perm | PTE_E;
+    }
+    else{
+      *pte = pa | perm | PTE_P;
+    }
+    
     if(a == last)
       break;
     a += PGSIZE;
@@ -267,7 +273,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     pte = walkpgdir(pgdir, (char*)a, 0);
     if(!pte)
       a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
-    else if((*pte & PTE_P) != 0){
+    else if((*pte & (PTE_P|PTE_E)) != 0){
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
@@ -290,7 +296,7 @@ freevm(pde_t *pgdir)
     panic("freevm: no pgdir");
   deallocuvm(pgdir, KERNBASE, 0);
   for(i = 0; i < NPDENTRIES; i++){
-    if(pgdir[i] & PTE_P){
+    if(pgdir[i] & (PTE_P|PTE_E)){
       char * v = P2V(PTE_ADDR(pgdir[i]));
       kfree(v);
     }
@@ -326,7 +332,7 @@ copyuvm(pde_t *pgdir, uint sz)
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
-    if(!(*pte & PTE_P))
+    if(!(*pte & (PTE_P|PTE_E)))
       panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
@@ -353,8 +359,10 @@ uva2ka(pde_t *pgdir, char *uva)
   pte_t *pte;
 
   pte = walkpgdir(pgdir, uva, 0);
-//  if((*pte & PTE_P) == 0)
-//    return 0;
+ if((*pte & (PTE_P|PTE_E)) == 0){
+  // panic("here");
+   return 0;
+ }
   if((*pte & PTE_U) == 0)
     return 0;
   return (char*)P2V(PTE_ADDR(*pte));
@@ -373,8 +381,9 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   while(len > 0){
     va0 = (uint)PGROUNDDOWN(va);
     pa0 = uva2ka(pgdir, (char*)va0);
-    if(pa0 == 0)
-      return -1;
+    if(pa0 == 0){
+      // panic("failed");
+      return -1;}
     n = PGSIZE - (va - va0);
     if(n > len)
       n = len;
@@ -457,7 +466,7 @@ int getpgtable(struct pt_entry* entries, int num){
       pteAddr=&pgtab[j];
       entries->pdx=i;
       entries->ptx=j;
-      entries->ppage=*pteAddr >> PTXSHIFT;
+      entries->ppage= (*pteAddr) >> PTXSHIFT;
       if((*pteAddr & PTE_E) == PTE_E){
         entries->encrypted=1;
       }
@@ -501,9 +510,11 @@ int getpgtable(struct pt_entry* entries, int num){
 }
 
 int dump_rawphymem(uint physical_addr, char *buffer){
-  char* va = P2V(physical_addr);
+  char* va = P2V((physical_addr));
+  // char* temp=P2V((&buffer));
   struct proc* curproc = myproc();
   int output=copyout(curproc->pgdir,*va,buffer,PGSIZE);
+  // output=0;
   return output;
 
   // return 0;
