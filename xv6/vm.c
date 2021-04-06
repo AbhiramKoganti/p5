@@ -469,48 +469,37 @@ int getpgtable(struct pt_entry* entries, int num){
     for(int j=lastPage;j>=0;j--){
       pte_t * pteAddr;
       pteAddr=&pgtab[j];
-      entries->pdx=i;
-      entries->ptx=j;
-      entries->ppage= (*pteAddr) >> PTXSHIFT;
+      entries[count].pdx=i;
+      entries[count].ptx=j;
+      entries[count].ppage= (*pteAddr) >> PTXSHIFT;
       if((*pteAddr & PTE_E) == PTE_E){
-        entries->encrypted=1;
+        entries[count].encrypted=1;
       }
       else{
-        entries->encrypted=0;
+        entries[count].encrypted=0;
       }
       if((*pteAddr & PTE_P) == PTE_P){
-        entries->present=1;
+        entries[count].present=1;
       }
       else{
-        entries->present=0;
+        entries[count].present=0;
       }
       if((*pteAddr & PTE_W) == PTE_W){
-        entries->writable=1;
+        entries[count].writable=1;
       }
       else{
-        entries->writable=0;
+        entries[count].writable=0;
       }
       count++;
       
       if(count==num){
         return count;
       }
-      entries++;
     }
   }
   // panic("here");
   return count;
-  // uint addr=PTE_ADDR(&pde[PTX(0)]);
-  // pde_t *pte= *pde;
-  // return addr;
-  
-  
- 
 
-
-
-
-  // return 0;
 
 }
 
@@ -518,7 +507,7 @@ int dump_rawphymem(uint physical_addr, char *buffer){
   char* va = P2V((physical_addr));
   // char* temp=P2V((&buffer));
   struct proc* curproc = myproc();
-  int output=copyout(curproc->pgdir,*va,buffer,PGSIZE);
+  int output=copyout(curproc->pgdir,(uint)buffer,va,PGSIZE);
   // output=0;
   return output;
 
