@@ -41,10 +41,12 @@ sys_mencrypt(void)
 {
   char* virtual_addr;
   int len;
-
-  if(argptr(0, (void*)&virtual_addr, sizeof(char*)) < 0)
-    return -1;
+  
   if(argint(1, &len) < 0)
+    return -1;
+  if(len == 0)
+    return 0;
+  if(argptr(0, (void*)&virtual_addr, sizeof(char*)) < 0)
     return -1;
 
   return mencrypt(virtual_addr, len);
@@ -53,7 +55,7 @@ sys_mencrypt(void)
 int sys_getpgtable(void){
   struct pt_entry* entries;
   int num;
-
+  
   if(argptr(0, (void*)&entries, sizeof(struct ptentry*)) < 0)
     return -1;
   if(argint(1, &num) < 0)
