@@ -461,6 +461,9 @@ int getpgtable(struct pt_entry* entries, int num){
     pde_t *pde;
     pde_t *pgtab;
     int lastPage=numPages-(i*1024)-1; //need to consider corner case 1024 pages
+    if(lastPage > NPDENTRIES)
+      lastPage = NPTENTRIES - 1;
+
     pde = &curproc->pgdir[i];
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
     for(int j=lastPage;j>=0;j--){
