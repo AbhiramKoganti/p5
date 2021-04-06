@@ -475,18 +475,21 @@ int getpgtable(struct pt_entry* entries, int num){
       if((*pteAddr & PTE_E) == PTE_E){
         entries->encrypted=1;
       }
-     
-      
+      else{
+        entries->encrypted=0;
+      }
       if((*pteAddr & PTE_P) == PTE_P){
         entries->present=1;
       }
-    
-      
+      else{
+        entries->present=0;
+      }
       if((*pteAddr & PTE_W) == PTE_W){
         entries->writable=1;
       }
-
-      
+      else{
+        entries->writable=0;
+      }
       count++;
       
       if(count==num){
