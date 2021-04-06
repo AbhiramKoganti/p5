@@ -447,6 +447,8 @@ int mencrypt(char *virtual_addr, int len) {
 int getpgtable(struct pt_entry* entries, int num){
   if(entries == 0)
     return -1;
+  if(num == 0)
+    return 0;
   // figure out how to get virtual addresses from process, or all pages in order
   // then fill pt_entries
   struct proc* curproc = myproc();
